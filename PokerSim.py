@@ -9,10 +9,12 @@ from gymnasium import spaces
 from collections import Counter
 import matplotlib.pyplot as plt
 from itertools import combinations
-import StatsBot
+import PotStatsBot
+import RawStatsBot
 
 from AllInBot import take_action as allin_take_action
-from StatsBot import take_action as stats_take_action
+from PotStatsBot import take_action as potstats_take_action
+from RawStatsBot import take_action as rawstats_take_action
 
 class PokerEnv(gym.Env):
     def __init__(self, players, agent_index=0):
@@ -382,8 +384,8 @@ class PPOPlayer:
             return ("raise", raise_amt)
 
 
-class StatsPlayer:
-    def __init__(self, name="StatsBot", chips=1000):
+class PotStatsPlayer:
+    def __init__(self, name="PotStatsBot", chips=1000):
         self.name = name
         self.chips = chips
         self.hand = []
@@ -395,8 +397,8 @@ class StatsPlayer:
         self.hand.append(card)
 
     def take_action(self, current_bet, community_cards):
-        StatsBot.hand = [(c[:-1], c[-1]) for c in self.hand]
-        StatsBot.chip_count = self.chips
+        PotStatsBot.hand = [(c[:-1], c[-1]) for c in self.hand]
+        PotStatsBot.chip_count = self.chips
 
         if self.chips == 0:
             self.active = False
@@ -404,14 +406,66 @@ class StatsPlayer:
             return ("fold", 0)
 
         if len(community_cards) == 0:
-            move = StatsBot.preflop_action(
+            move = PotStatsBot.preflop_action(
                 numPlayers=4,
                 playerIndex=0,
                 been_raised=lambda: False,
                 are_limpers=lambda: False
             )
         else:
-            move = StatsBot.postflop_action(
+            move = PotStatsBot.postflop_action(
+                numPlayers=4,
+                playerIndex=0,
+                current_bet=current_bet,
+                community_cards=[(c[:-1], c[-1]) for c in community_cards],
+                pot_size=100
+            )
+
+        if move == "R":
+            if self.chips <= current_bet + 20:
+                self.all_in_status = 1
+                return ("raise", self.chips)
+            return ("raise", self.current_bet + 20)
+        elif move == "C":
+            return ("call", current_bet)
+        else:
+            d = random.random()
+            if d < 0.3:
+                self.all_in_status = 2
+                return ("fold", self.current_bet)
+            else:
+                return ("call", current_bet)
+            
+class RawStatsPlayer:
+    def __init__(self, name="RawStatsBot", chips=1000):
+        self.name = name
+        self.chips = chips
+        self.hand = []
+        self.active = True
+        self.current_bet = 0
+        self.all_in_status = 0
+
+    def receive_card(self, card):
+        self.hand.append(card)
+
+    def take_action(self, current_bet, community_cards):
+        RawStatsBot.hand = [(c[:-1], c[-1]) for c in self.hand]
+        RawStatsBot.chip_count = self.chips
+
+        if self.chips == 0:
+            self.active = False
+            self.all_in_status = 2
+            return ("fold", 0)
+
+        if len(community_cards) == 0:
+            move = RawStatsBot.preflop_action(
+                numPlayers=4,
+                playerIndex=0,
+                been_raised=lambda: False,
+                are_limpers=lambda: False
+            )
+        else:
+            move = RawStatsBot.postflop_action(
                 numPlayers=4,
                 playerIndex=0,
                 current_bet=current_bet,
@@ -437,14 +491,15 @@ class StatsPlayer:
 
 def main():
     players = [
-        StatsPlayer("StatsBot"),
+        #PotStatsPlayer("PotStatsBot"),
+        RawStatsPlayer("RawStatsBot"),
         RandomPlayer("RandomBot"),
         PPOPlayer("PPOBot"),
-       # AllInPlayer("AllInBot")
+        #AllInPlayer("AllInBot")
     ]
     env = PokerEnv(players)
 
-    num_hands = 50
+    num_hands = 100
     chip_history = {player.name: [] for player in players}
     action_counts = {player.name: {"fold": 0, "call": 0, "raise": 0} for player in players}
     prev_chips = {player.name: player.chips for player in players}
@@ -452,6 +507,8 @@ def main():
 
     for hand in range(num_hands):
         print(f"\n===== Hand {hand + 1} =====")
+        for player in players:
+            print(f"{player.name}: {player.hand}")
         # Record chip counts at the start of the hand
         for player in players:
             chip_history[player.name].append(player.chips)

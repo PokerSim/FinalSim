@@ -18,6 +18,7 @@ hand_type_stengths= {
     "straight_flush": 8,
     "royal_flush": 9
 }
+oddsLine = 0.3
 
 #determine the next action to take
 # vars needed: current_bet, community_cards, hand, chip_count, num_players, position
@@ -52,29 +53,25 @@ def postflop_action(numPlayers, playerIndex, current_bet, community_cards, pot_s
     elif (community_cards.count() == 4): # On the turn
         outs_odds = outs_total / 46
     
-    # Calculate pot odds
-    call_cost = current_bet - (chip_count if chip_count < current_bet else 0)
-    pot_odds = call_cost / (pot_size + call_cost) if call_cost > 0 else 0
-    
     # Strategy
-    if pot_odds == 0: # If there is no cost to call, always call or raise
+    if current_bet == 0: # If there is no cost to call, always call or raise
         if current_hand_strength >= 4:
             return "R"
-        elif current_hand_strength >= 2 and pot_odds >= 0.4:
+        elif current_hand_strength >= 2:
             return "R"
         else:
             return "C"
     if current_hand_strength >= 4: # If the current hand is a straight or better
         return "C"
     elif current_hand_strength >= 2: # If the current hand is a two pair or better
-        if outs_odds >= pot_odds:
+        if outs_odds >= oddsLine:
             return "C"
         else:
             return "F"
     elif current_hand_strength >= 0: # If the current hand is a one pair or high card
         for out_type, count in outs.items():
             if hand_type_stengths[out_type] >= 4:
-                if outs_odds >= pot_odds and count > 0:
+                if outs_odds >= oddsLine and count > 0:
                     return "C"
                 else:
                     return "F"
@@ -108,19 +105,20 @@ def preflop_action(numPlayers, playerIndex, been_raised, are_limpers):
     if row is None:
         return "fold"
 
-    solutions = [[['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R']],
-                 [['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['C'], ['C'], ['R']],
-                 [['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['C'], ['C'], ['C']],
-                 [['R'], ['R'], ['R'], ['C'], ['R'], ['R'], ['C'], ['C'], ['C']],
-                 [['R'], ['R'], ['R'], ['C'], ['C'], ['C'], ['C'], ['C'], ['C']],
-                 [['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['R']],
-                 [['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['C'], ['R'], ['R']],
-                 [['R'], ['R'], ['R'], ['R'], ['R'], ['R'], ['C'], ['C'], ['R']], 
-                 [['F'], ['R'], ['R'], ['R'], ['R'], ['R'], ['F'], ['C'], ['C']],
-                 [['F'], ['R'], ['R'], ['R'], ['R'], ['R'], ['F'], ['F'], ['C']],
-                 [['F'], ['F'], ['R'], ['F'], ['R'], ['R'], ['F'], ['F'], ['F']],
-                 [['F'], ['F'], ['R'], ['F'], ['F'], ['F'], ['F'], ['F'], ['F']]]
-    
+    solutions = [
+        ['R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R'],
+        ['R', 'R', 'R', 'R', 'R', 'R', 'C', 'C', 'R'],
+        ['R', 'R', 'R', 'R', 'R', 'R', 'C', 'C', 'C'],
+        ['R', 'R', 'R', 'C', 'R', 'R', 'C', 'C', 'C'],
+        ['R', 'R', 'R', 'C', 'C', 'C', 'C', 'C', 'C'],
+        ['R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R'],
+        ['R', 'R', 'R', 'R', 'R', 'R', 'C', 'R', 'R'],
+        ['R', 'R', 'R', 'R', 'R', 'R', 'C', 'C', 'R'],
+        ['F', 'R', 'R', 'R', 'R', 'R', 'F', 'C', 'C'],
+        ['F', 'R', 'R', 'R', 'R', 'R', 'F', 'F', 'C'],
+        ['F', 'F', 'R', 'F', 'R', 'R', 'F', 'F', 'F'],
+        ['F', 'F', 'R', 'F', 'F', 'F', 'F', 'F', 'F']]
+
     return solutions[row][column]
 
 # determine position
