@@ -5,7 +5,8 @@ Overview
 --------
 PokerSim is a Python-based multi-agent poker simulation environment that supports different types of poker bots playing No-Limit Texas Hold'em. It integrates Gym-style environment control, poker rules, chip management, hand evaluation, and player strategies such as:
 
-- StatsBot: Uses statistical heuristics and expected value calculations.
+- PotStatsBot: Uses statistical heuristics and expected value calculations with pot odds.
+- RawStatsBot: Uses statistical heuristics and expected value calculations without pot odds.
 - AllInBot: Always raises all-in.
 - PPOBot: Uses a mock neural network policy.
 - RandomBot: Chooses random legal actions.
@@ -27,7 +28,8 @@ Features
 File Descriptions
 -----------------
 PokerSim.py  - Main simulation environment with player classes and match loop.
-StatsBot.py  - Implements a statistically-driven bot using preflop/postflop logic.
+PotStatsBot.py  - Implements a statistically-driven bot using preflop/postflop logic and pot odds.
+PotStatsBot.py  - Implements a statistically-driven bot using preflop/postflop logic.
 AllInBot.py  - Simplistic bot that always raises all-in.
 pokerkit     - External poker logic module assumed to be used in StatsBot. (Not provided)
 
@@ -50,11 +52,12 @@ To simulate a game of poker between bots:
 python PokerSim.py
 
 Modify the `players` list in `main()` to select which bots participate.
-The default runs 50 hands and prints action summaries + chip graph.
+The default runs 100 hands and prints action summaries + chip graph.
 
 Player Types
 ------------
-StatsPlayer   - Uses preflop charts and postflop EV heuristics from StatsBot.py.
+PotStatsPlayer   - Uses preflop charts and postflop EV heuristics from PotStatsBot.py.
+RawStatsPlayer   - Uses preflop charts and postflop EV heuristics from RawStatsBot.py.
 AllInPlayer   - Always raises all-in (intended for bluff/exploit testing).
 PPOPlayer     - Dummy policy using PyTorch. Meant to be replaced with a trained agent.
 RandomPlayer  - Random legal action selection for stochastic baseline comparison.
@@ -72,6 +75,7 @@ Output
 ------
 - Per-hand status printouts:
   - Chip counts
+  - Player cards
   - Community cards
   - Player decisions
 - A line graph of chip totals for each player

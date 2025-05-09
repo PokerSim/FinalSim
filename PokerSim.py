@@ -121,8 +121,13 @@ class PokerEnv(gym.Env):
         action_name, bet_amount = player.take_action(self.current_bet, self.community_cards)
 
         if action_name == "fold":
-            player.active = False
-            print(f"{player.name} folds")
+            active_players = [p for p in self.players if p.active]
+            if len(active_players) == 1:
+                player.active = True
+                print(f"{player.name} checks")
+            else:
+                player.active = False
+                print(f"{player.name} folds")
         elif action_name == "call":
             call_amount = self.current_bet - player.current_bet
             actual_call = min(call_amount, player.chips)
@@ -179,7 +184,7 @@ class PokerEnv(gym.Env):
             self.distribute_pot(active_players)
             return self._get_obs(), 0, True, False, {}
 
-        if self.pending_all_in and self.action_pointer == self.dealer:
+        if all(p.current_bet == self.current_bet or p.chips == 0 for p in active_players):
             print("All-in occurred and players finished actions. Dealing rest of board...")
             self.betting_locked = True
             self.deal_remaining_board()
@@ -491,10 +496,11 @@ class RawStatsPlayer:
 
 def main():
     players = [
-        #PotStatsPlayer("PotStatsBot"),
+        PotStatsPlayer("PotStatsBot"),
         RawStatsPlayer("RawStatsBot"),
         RandomPlayer("RandomBot"),
         PPOPlayer("PPOBot"),
+        #PPOPlayer("PPOBot2"),
         #AllInPlayer("AllInBot")
     ]
     env = PokerEnv(players)
